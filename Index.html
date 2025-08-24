@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base target="_top">
+  <?!= include('Css'); ?>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <div id="notificationContainer" class="notification-container"></div>
+
+  <div class="login-wrapper">
+    <div class="logo-title-container">
+      <div style="text-align: center;">
+        <img id="ItemPreview" src="" alt="Logo">
+      </div>
+      <h1 class="login-title">Bitácora de Incidenciaa</h1>
+    </div>
+    <div id="loginSection" class="login-container">
+      <h2>Iniciar Sesión</h2>
+      <form id="loginForm" class="login-form">
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Ingresar</button>
+      </form>
+      <div id="loginMessage" style="color: white; text-align: center; margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <div id="mainContent" class="main-content">
+    <div class="user-info">
+      Usuario: <span id="currentUser"></span> | 
+      Nombre y Apellido : <span id="currentFirstName"></span> <span id="currentLastName"></span> |
+      Rol: <span id="currentRole"></span>
+      <span id="providerInfo" style="display: none;">
+        | Proveedor: <span id="currentProvider"></span>
+      </span>
+      
+      <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div id="adminPanel" class="admin-panel">
+      <div id="userManagementPanel" style="display: none;">
+        <h3>Administración de Usuarios</h3>
+        <form id="adminForm" class="admin-form">
+          <input type="text" id="newUsername" placeholder="Nombre de usuario" required>
+          <input type="password" id="newPassword" placeholder="Contraseña" required>
+          <input type="text" id="newFirstName" placeholder="Nombre" required>
+          <input type="text" id="newLastName" placeholder="Apellido" required>
+          <select id="newRole" required>
+            <option value="">Seleccione rol</option>
+            <option value="admin">Administrador</option>
+            <option value="user">Usuario</option>
+          </select>
+          <select id="newProvider">
+            <option value="">Seleccione proveedor</option>
+            <option value="EPSDC-ATE">EPSDC-ATE</option>
+            <option value="ASISTA SERVICIOS">ASISTA SERVICIOS</option>
+            <option value="VIRTUAL">VIRTUAL</option>
+            <option value="BARINAS">BARINAS</option>
+            <option value="TIBISAY">TIBISAY</option>
+            <option value="TACHIRA">TACHIRA</option>
+            <option value="EL RECREO">EL RECREO</option>
+            <option value="METROCENTER">METROCENTER</option>
+            <option value="CCCT">CCCT</option>
+            <option value="SAMBIL LA CANDELARIA">SAMBIL LA CANDELARIA</option>
+            <option value="SAMBIL CHACAO">SAMBIL CHACAO</option>
+            <option value="BUENAVENTURA">BUENAVENTURA</option>
+            <option value="CHARALLAVE">CHARALLAVE</option>
+            <option value="SAN ANTONIO">SAN ANTONIO</option>
+            <option value="SAN FERNANDO DE APURE">SAN FERNANDO DE APURE</option>
+            <option value="LAS AMÉRICAS">LAS AMÉRICAS</option>
+            <option value="TORRE VALENCIA">TORRE VALENCIA</option>
+            <option value="SAN JUAN DE LOS MORROS">SAN JUAN DE LOS MORROS</option>
+            <option value="BUENAVENTURA ARAURE">BUENAVENTURA ARAURE</option>
+            <option value="METRÓPOLIS">METRÓPOLIS</option>
+            <option value="PUERTO ORDAZ">PUERTO ORDAZ</option>
+            <option value="ORINOCO">ORINOCO</option>
+            <option value="MONAGAS PLAZA">MONAGAS PLAZA</option>
+            <option value="SAMBIL PARAGUANÁ">SAMBIL PARAGUANÁ</option>
+            <option value="VALERA">VALERA</option>
+            <option value="BELLA VISTA">BELLA VISTA</option>
+            <option value="CABIMAS">CABIMAS</option>
+            <option value="PLAZA MAYOR">PLAZA MAYOR</option>
+            <option value="PORLAMAR">PORLAMAR</option>
+            <option value="CUMANÁ">CUMANÁ</option>
+          </select>
+          <button type="submit">Crear Usuario</button>
+        </form>
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre Completo</th>
+              <th>Rol</th>
+              <th>Proveedor</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="bitacoraView" style="display: none;">
+      <h1 class="bitacora-title">Bitácora de Eventos Movilnet</h1>
+      <form id="formulario">
+        <div class="form-section">
+          <div class="form-group">
+            <label for="numeroRegistro">Número de Registro</label>
+            <input type="text" id="numeroRegistro" name="numeroRegistro" placeholder="Número de registro"readonly>
+            </div>
+          
+          <div class="form-group">
+            <label for="canalAtencion">Canal de Atención</label>
+            <select id="canalAtencion" name="canalAtencion" required>
+               <option value="">Seleccione un canal</option>
+               <option value="Presencial">Presencial</option>
+               <option value="Telefónica">Telefónica</option>
+               <option value="Virtual">Virtual</option>
+               <option value="SPL">SPL</option>
+            </select>
+            <span class="tooltip-text">Seleccione el canal de atención.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="proveedor">Proveedor/OSAC</label>
+            <select id="proveedor" name="proveedor" required disabled>
+               <option value="">Seleccione un proveedor</option>
+               </select>
+            <span class="tooltip-text">Seleccione el Proveedor o OASC correspondiente.</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="tipoIncidencia">Tipo de Incidencia</label>
+            <select id="tipoIncidencia" name="tipoIncidencia" required disabled>
+              <option value="">Seleccione un tipo de incidencia</option>
+            </select>
+            <span class="tooltip-text">Seleccione el tipo de incidencia que se está reportando.</span>
+          </div>
+          <div class="form-group">
+            <label for="nombreEvento">Nombre del Evento</label>
+            <select id="nombreEvento" name="nombreEvento" required disabled>
+              <option value="">Seleccione un evento</option>
+            </select>
+            <span class="tooltip-text">Seleccione el nombre del evento relacionado con la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="fechaInicio">Fecha de Inicio</label>
+            <input type="datetime-local" id="fechaInicio" name="fechaInicio" required max="">
+            <span class="tooltip-text">Ingrese la fecha y hora de inicio de la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="fechaEscalamiento">Fecha de Escalamiento</label>
+            <input type="datetime-local" id="fechaEscalamiento" name="fechaEscalamiento">
+            <span class="tooltip-text">Ingrese la fecha y hora en que se escaló la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="nivelEscalamiento">Nivel de Escalamiento</label>
+            <select id="nivelEscalamiento" name="nivelEscalamiento">
+              <option value="">Seleccione Nivel de Escalamiento</option>
+              <option value="Vicepresidencia">Vicepresidencia</option>
+              <option value="Gerencia General">Gerencia General</option>
+              <option value="Gerencia">Gerencia</option>
+              <option value="Coordinación">Coordinación</option>
+              <option value="Supervisores Operativos">Supervisores Operativos</option>
+              <option value="Soporte de Averias">Soporte de Averias</option>
+              <option value="Supervisor Proveedor">Supervisor Proveedor</option>
+            </select>
+            <span class="tooltip-text">Seleccione el nivel de escalamiento de la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="causaIncidencia">Causa de la Incidencia</label>
+            <input type="text" id="causaIncidencia" name="causaIncidencia">
+            <span class="tooltip-text">Ingrese causa de la incidencia si no se tiene coloca N/A.</span>
+          </div>
+          <div class="form-group">
+            <label for="fechaSolucion">Fecha de Solución</label>
+            <input type="datetime-local" id="fechaSolucion" name="fechaSolucion">
+            <span class="tooltip-text">Ingrese la fecha y hora en que se solucionó la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="detectadoPor">Detectado Por</label>
+            <input type="text" id="detectadoPor" name="detectadoPor">
+            <span class="tooltip-text">Ingrese el nombre de la persona que detectó la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="reportadoA">Reportado A</label>
+            <input type="text" id="reportadoA" name="reportadoA">
+            <span class="tooltip-text">Ingrese el nombre de la persona a quien se reportó la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="responsable">Responsable</label>
+              <select id="responsable" name="responsdable">
+              <option value="">Seleccione un responsable</option>
+              <option value="Movilnet">Movilnet</option>
+              <option value="Proveedor">Proveedor</option>
+              <option value="Otro">Otro (Especifique en la Observaciones)</option>
+            </select>
+            <span class="tooltip-text">Ingrese el nombre del responsable de la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="ticket">N° de Ticket</label>
+            <input type="text" id="ticket" name="ticket" >
+            <span class="tooltip-text">Ingrese numero de ticket, si no se tiene coloca N/A.</span>
+          </div>
+          <div class="form-group">
+            <label for="descripcion">Descripción de la Incidencia</label>
+            <textarea id="descripcion" name="descripcion"></textarea>
+            <span class="tooltip-text">Descripción de la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones"></textarea>
+            <span class="tooltip-text">Ingrese cualquier observación adicional sobre la incidencia.</span>
+          </div>
+          <div class="form-group">
+            <label for="estatus">Estatus</label>
+            <select id="estatus" name="estatus">
+              <option value="">Seleccione un estatus</option>
+              <option value="Abierto">Abierto</option>
+              <option value="Cerrado">Cerrado</option>
+            </select>
+            <span class="tooltip-text">Seleccione el estatus actual de la incidencia.</span>
+          </div>
+        </div>
+        <div class="button-group">
+          <button type="button" id="btnGuardar">Guardar</button>
+          <button type="button" id="btnBuscar">Buscar</button>
+          <button type="button" id="btnActualizar">Actualizar</button>
+          <button type="button" id="btnDescargar">Descargar</button>
+          <button type="reset" id="btnLimpiar">Limpiar</button>
+        </div>
+        <div id="mensaje"></div>
+      </form>
+    </div>
+    
+   <footer>
+      Sup Jose A Paredes GCAI-Mérida-*611
+   </footer>
+
+      <div id="modalBusqueda" class="modal">
+        <div class="modal-content">
+          <span class="close" id="cerrarModal">&times;</span>
+          <h2 style="color: #ffff;">Buscar Registro</h2>
+          <label for="modalNumeroRegistro">Número de Registro:</label>
+          <input type="text" id="modalNumeroRegistro" placeholder="Ingrese el número de registro">
+          <div class="button-group" style="margin-top:15px;">
+            <button type="button" id="btnModalBuscar">Buscar</button>
+          </div>
+          <div id="resultadoBusqueda" class="resultado-busqueda" style="display: none;">
+            <h3 style="color: #ffff; margin-bottom: 15px;">Registro Encontrado</h3>
+            <p><strong>Número de Registro:</strong> <span id="resultNumeroRegistro"></span></p>
+            <p><strong>Proveedor:</strong> <span id="resultProveedor"></span></p>
+            <p><strong>Tipo de Incidencia:</strong> <span id="resultTipoIncidencia"></span></p>
+            <p><strong>Nombre del Evento:</strong> <span id="resultNombreEvento"></span></p>
+            <p><strong>Fecha de Inicio:</strong> <span id="resultFechaInicio"></span></p>
+            <p><strong>Estatus:</strong> <span id="resultEstatus"></span></p>
+            <div class="boton-aceptar">
+              <button type="button" id="btnAceptarRegistro">Aceptar y Cargar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+      <div id="modalDescarga" class="modal">
+        <div class="modal-content">
+          <span class="close" id="cerrarModalDescarga">&times;</span>
+          <h2 style="color: #ffff;">Opciones de Descarga</h2>
+          <label for="proveedorDescarga">Seleccione el Proveedor:</label>
+          <select id="proveedorDescarga">
+            <option value="TODOS">Toda la base de datos</option>
+            <option value="EPSDC-ATE">ESPSC-ATE</option>
+            <option value="ASISTA SERVICIOS">ASISTA SERVICIOS</option>
+            <option value="VIRTUAL">VIRTUAL</option>
+            <option value="SOPORTE PRIMERA LINEA">SOPORTE PRIMERA LINEA</option>
+            <option value="BARINAS">BARINAS</option>
+            <option value="TIBISAY">TIBISAY</option>
+            <option value="TACHIRA">TACHIRA</option>
+            <option value="EL RECREO">EL RECREO</option>
+            <option value="METROCENTER">METROCENTER</option>
+            <option value="CCCT">CCCT</option>
+            <option value="SAMBIL LA CANDELARIA">SAMBIL LA CANDELARIA</option>
+            <option value="SAMBIL CHACAO">SAMBIL CHACAO</option>
+            <option value="BUENAVENTURA">BUENAVENTURA</option>
+            <option value="CHARALLAVE">CHARALLAVE</option>
+            <option value="SAN ANTONIO">SAN ANTONIO</option>
+            <option value="SAN FERNANDO DE APURE">SAN FERNANDO DE APURE</option>
+            <option value="LAS AMÉRICAS">LAS AMÉRICAS</option>
+            <option value="TORRE VALENCIA">TORRE VALENCIA</option>
+            <option value="SAN JUAN DE LOS MORROS">SAN JUAN DE LOS MORROS</option>
+            <option value="BUENAVENTURA ARAURE">BUENAVENTURA ARAURE</option>
+            <option value="METRÓPOLIS">METRÓPOLIS</option>
+            <option value="PUERTO ORDAZ">PUERTO ORDAZ</option>
+            <option value="ORINOCO">ORINOCO</option>
+            <option value="MONAGAS PLAZA">MONAGAS PLAZA</option>
+            <option value="SAMBIL PARAGUANÁ">SAMBIL PARAGUANÁ</option>
+            <option value="VALERA">VALERA</option>
+            <option value="BELLA VISTA">BELLA VISTA</option>
+            <option value="CABIMAS">CABIMAS</option>
+            <option value="PLAZA MAYOR">PLAZA MAYOR</option>
+            <option value="PORLAMAR">PORLAMAR</option>
+            <option value="CUMANÁ">CUMANÁ</option>
+          </select>
+          <div class="button-group" style="margin-top:15px;">
+            <button type="button" id="btnIniciarDescarga">Descargar</button>
+          </div>
+        </div>
+      </div>
+    
+      <div id="ventanaEmergente">
+        <h2>✅ Registro exitoso</h2>
+             <p id="mensajeVentana"></p>
+            <p>Se recuerda copiar este n° de registro completo NR-000000 para futuras consultas.</p>
+        <button onclick="cerrarVentana()">Cerrar</button>
+      </div>
+    </div>
+    
+  <?!= include('Js'); ?>
+</body>
+</html>

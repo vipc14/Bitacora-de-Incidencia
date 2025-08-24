@@ -1,0 +1,670 @@
+<!-- 
+  Estilos CSS para la Bitácora de Incidencias Movilnet
+  Desarrollado por: ING Jose Paredes GCAI-Mérida-*611
+  
+  Este archivo contiene todos los estilos necesarios para la aplicación web de la Bitácora de Incidencias.
+  La estructura está organizada en secciones para facilitar el mantenimiento:
+  
+  1. Estilos base y reset
+  2. Layout y contenedores principales
+  3. Formularios y campos de entrada
+  4. Botones y elementos interactivos
+  5. Modales y ventanas emergentes
+  6. Sistema de notificaciones
+  7. Responsive design
+  8. Utilidades y helpers
+-->
+
+<!-- Fuente Roboto para un estilo moderno similar a Google -->
+<link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-primary-accent: rgb(255, 88, 95); /* #FF585F */
+    --color-primary-accent-darker: rgb(245, 78, 85); /* #F54E55 */
+    --color-background-main: rgb(218, 220, 224);
+    --color-background-form: rgb(116, 118, 120);
+    --color-text-dark: rgb(32, 33, 36);
+    --color-text-light: var(--color-white);
+    --color-border-light: rgb(218, 220, 224);
+    --color-border-focus: rgb(66, 133, 244); /* #4285F4 */
+    --color-border-invalid: var(--color-primary-accent);
+    --color-google-blue: rgb(66, 133, 244); /* #4285F4 */
+    --color-google-blue-darker: rgb(56, 123, 234); /* #387BEA */
+    --color-medium-gray: rgb(136, 136, 136);
+    --color-shadow: rgba(32,33,36,0.28);
+    --color-shadow-text: rgba(0, 0, 0, 0.3);
+    --color-shadow-modal: rgba(0,0,0,0.25);
+    --color-overlay-dark: rgba(32,33,36,0.4);
+    --color-tooltip-bg: #555;
+    --color-white-transparent-10: rgba(255, 255, 255, 0.1);
+    --color-white-transparent-20: rgba(255, 255, 255, 0.2);
+    --color-table-row-even: rgb(245, 245, 245);
+    --color-table-row-hover: rgb(240, 240, 240);
+    --color-notification-success: #4CAF50; --color-notification-success-border: #388E3C;
+    --color-notification-error: #F44336;   --color-notification-error-border: #D32F2F;
+    --color-notification-info: #2196F3;    --color-notification-info-border: #1976D2;
+    --color-notification-warning: #FF9800; --color-notification-warning-border: #F57C00;
+  }
+
+  /* 1. Reinicio de estilos básicos */
+   *{ box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* 2. Estilos para el <body> */
+  body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: var(--color-background-main);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  /* 3. Títulos */
+  .bitacora-title {
+    text-align: center;
+    color: var(--color-text-light);
+    margin: 0 0 30px 0;
+    font-size: 28px;
+    font-weight: 500;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    width: 100%;
+  }
+
+  /* Ocultar títulos según la vista */
+  #mainContent .login-title {
+    display: none;
+  }
+
+  .login-wrapper .bitacora-title {
+    display: none;
+  }
+
+  /* 4. Contenedor del formulario */
+  form {
+    background: var(--color-background-form);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px var(--color-shadow);
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .form-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 20px;
+    row-gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* 5. Etiquetas y campos de entrada */
+  label {
+    margin-bottom: 5px;
+    font-size: 16px;
+    color: var(--color-text-light);
+  }
+
+  input[type="text"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    color: var(--color-text-dark);
+    border: 1px solid var(--color-border-light);
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-border-focus);
+  }
+
+  textarea { resize: vertical; }
+
+  /* 6. Grupo de botones y estilo de botones */
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+  }
+
+  button {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-light);
+    background-color: var(--color-primary-accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, font-weight 0.2s, border 0.2s;
+  }
+
+  button:hover {
+    background-color: var(--color-white);
+    color: var(--color-primary-accent);
+    font-weight: 700;
+    border: 2px solid var(--color-medium-gray);
+  }
+
+  /* 7. Mensajes de estado */
+  #mensaje {
+    margin-top: 15px;
+    font-weight: 500;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .success { color: var(--color-text-light); } /* El color del texto es blanco, el fondo de la notificación lo diferencia */
+  .error   { color: var(--color-text-light); } /* El color del texto es blanco, el fondo de la notificación lo diferencia */
+
+  /* 8. Estilos de modal */
+  .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0;
+    width: 100%; height: 100%; overflow: auto;
+    background-color: var(--color-overlay-dark);
+  }
+  .modal-content {
+    background-color: var(--color-background-form);
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%; max-width: 600px;
+    box-shadow: 0 1px 6px var(--color-shadow);
+  }
+  .close { float: right; font-size: 24px; font-weight: 500; color: var(--color-text-light); cursor: pointer; }
+  .close:hover { color: var(--color-text-dark); }
+
+  /* Estilos para el modal de resultados */
+  .resultado-busqueda {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--color-white-transparent-10);
+    border-radius: 4px;
+  }
+  .resultado-busqueda p {
+    margin: 8px 0;
+    color: var(--color-text-light);
+  }
+  .resultado-busqueda strong {
+    color: var(--color-text-light);
+  }
+  .boton-aceptar {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  /* 9. Ventana emergente personalizada */
+  #ventanaEmergente {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--color-background-form);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--color-shadow-modal);
+    z-index: 1000;
+    text-align: center;
+    width: 250px;
+  }
+  #ventanaEmergente h2 {
+    color: var(--color-text-light);
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  #ventanaEmergente p {
+    font-size: 14px;
+    margin-bottom: 15px;
+    color: var(--color-text-light);
+  }
+  #ventanaEmergente button {
+    background: var(--color-primary-accent);
+    color: var(--color-text-light);
+    transition: background 0.2s;
+  }
+  #ventanaEmergente button:hover {
+    background: var(--color-text-light);
+    color: var(--color-primary-accent);
+  }
+
+  /* 11. Estado de botón deshabilitado */
+  #btnGuardar:disabled {
+    background-color: var(--color-medium-gray);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  /* Adaptaciones para móvil */
+  @media (max-width: 600px) {
+    .form-section { grid-template-columns: 1fr; }
+    body { font-size: 18px; }
+    form { padding: 20px; }
+    h1 { font-size: 26px; }
+    button { min-height: 50px; font-size: 16px; padding: 12px 20px; }
+  }
+
+   .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--color-tooltip-bg);
+    color: var(--color-text-light);
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 100%;
+    left: 50%; /* Centrado con transform */
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+  }
+  .form-group:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* Estilos para campos inválidos */
+  input:invalid {
+    border-color: var(--color-border-invalid);
+  }
+
+  /* Estilos para el login */
+  .login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .logo-title-container {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .logo-title-container img {
+    max-width: 200px;
+    height: auto;
+    margin-bottom: 15px;
+  }
+
+  .logo-title-container h1 {
+    color: var(--color-text-light);
+    margin: 20px 0;
+    font-size: 32px;
+    font-weight: 500;
+    text-shadow: 2px 2px 4px var(--color-shadow-text);
+  }
+
+  .login-container {
+    background: var(--color-background-form);
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 6px var(--color-shadow);
+    width: 100%;
+    max-width: 400px;
+  }
+  .login-container h2 {
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: 500;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--color-white-transparent-20);
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .login-form input {
+    padding: 5px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .login-form button {
+    background-color: var(--color-primary-accent);
+    color: var(--color-text-light);
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .login-form button:hover {
+    background-color: var(--color-text-light);
+    color: var(--color-primary-accent);
+  }
+
+  .main-content {
+    display: none;
+  }
+
+  .main-content + .login-wrapper {
+    display: none;
+  }
+
+  .user-info {
+    text-align: right;
+    color: var(--color-text-light);
+    margin-bottom: 10px;
+    padding: 10px;
+    background: var(--color-background-form);
+    border-radius: 4px;
+  }
+
+  .logout-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-size: 14px;
+  }
+  /* Estilos para el panel de administración */
+  .admin-panel {
+    background: var(--color-background-form);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px var(--color-shadow);
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+  }
+
+  /* Estilos para cuando se muestran ambas vistas */
+  .admin-panel + #bitacoraView {
+    margin-top: 30px;
+  }
+
+  #bitacoraView {
+    background: var(--color-background-form);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px var(--color-shadow);
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #bitacoraView h1 {
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Ajustes para la vista de administración */
+  .admin-panel h3 {
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    border-bottom: 2px solid var(--color-white-transparent-20);
+    padding-bottom: 10px;
+  }
+
+  .admin-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+    background: var(--color-white-transparent-10);
+    padding: 20px;
+    border-radius: 8px;
+  }
+
+  .admin-form input,
+  .admin-form select {
+    padding: 12px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--color-text-light);
+  }
+
+  .admin-form button {
+    grid-column: span 2;
+    background-color: var(--color-primary-accent);
+    color: var(--color-text-light);
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .admin-form button:hover {
+    background-color: var(--color-text-light);
+    color: var(--color-primary-accent);
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--color-text-light);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid var(--color-border-light);
+  }
+
+  .users-table th {
+    background: var(--color-background-form);
+    color: var(--color-text-light);
+    font-weight: 500;
+  }
+
+  .users-table tr:nth-child(even) {
+    background: var(--color-table-row-even);
+  }
+
+  .users-table tr:hover {
+    background: var(--color-table-row-hover);
+  }
+
+  .action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+
+  .edit-btn {
+    background: var(--color-google-blue);
+    color: var(--color-text-light);
+  }
+
+  .edit-btn:hover {
+    background: var(--color-google-blue-darker);
+  }
+
+  .delete-btn {
+    background: var(--color-primary-accent);
+    color: var(--color-text-light);
+  }
+
+  .delete-btn:hover {
+    background: var(--color-primary-accent-darker);
+  }
+
+  /* Estilos para el sistema de notificaciones */
+  .notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notification {
+    min-width: 300px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: var(--color-text-light);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .notification::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+  }
+
+  .notification.success {
+    background-color: var(--color-notification-success);
+  }
+
+  .notification.success::before {
+    background-color: var(--color-notification-success-border);
+  }
+
+  .notification.error {
+    background-color: var(--color-notification-error);
+  }
+
+  .notification.error::before {
+    background-color: var(--color-notification-error-border);
+  }
+
+  .notification.info {
+    background-color: var(--color-notification-info);
+  }
+
+  .notification.info::before {
+    background-color: var(--color-notification-info-border);
+  }
+
+  .notification.warning {
+    background-color: var(--color-notification-warning);
+  }
+
+  .notification.warning::before {
+    background-color: var(--color-notification-warning-border);
+  }
+
+  .notification-icon {
+    font-size: 20px;
+  }
+
+  .notification-content {
+    flex-grow: 1;
+  }
+
+  .notification-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .notification-message {
+    opacity: 0.9;
+  }
+
+  .notification-close {
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .notification-close:hover {
+    opacity: 1;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .notification.hide {
+    animation: slideOut 0.3s ease-in forwards;
+  }
+
+  #formulario {
+    width: 100%;
+  }
+
+  .login-wrapper .logo-title-container .login-title {
+    text-align: center;
+    color: var(--color-black) !important; /* Revisar necesidad de !important */
+    margin: 10px 0;
+    font-size: 32px;
+    font-weight: 500;
+    text-shadow: 2px 2px 4px var(--color-shadow-text);
+  }
+</style>

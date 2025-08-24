@@ -1,0 +1,625 @@
+<script>
+    // --- FUNCIONES GLOBALES ---
+    // La función logout se coloca aquí fuera, en el ámbito global,
+    // para que el botón con onclick="logout()" en el HTML pueda encontrarla y ejecutarla.
+    // Función para cerrar sesión
+    function logout() {
+      sessionStorage.clear();
+      document.querySelector('.login-wrapper').style.display = 'flex';
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('loginForm').reset();
+      document.getElementById('loginMessage').textContent = '';
+    }
+
+    // Carga el logo de la aplicación al iniciar.
+    google.script.run.withSuccessHandler(function (bytes) {
+        if(document.getElementById("ItemPreview")) document.getElementById("ItemPreview").src = "data:image/png;base64," + bytes;
+    }).loadImageBytes();
+
+
+    // --- LÓGICA PRINCIPAL DE LA APLICACIÓN ---
+    // El evento 'DOMContentLoaded' se asegura de que todo el HTML esté cargado antes de ejecutar el script.
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // --- SECCIÓN 1: DEFINICIÓN DE DATOS Y ELEMENTOS ---
+        const canalSelect = document.getElementById('canalAtencion');
+        const proveedorSelect = document.getElementById('proveedor');
+        const tipoSelect = document.getElementById('tipoIncidencia');
+        const eventoSelect = document.getElementById('nombreEvento');
+
+        const canalesData = {
+            "Presencial": ["BARINAS", "TIBISAY", "TACHIRA", "EL RECREO", "METROCENTER", "CCCT", "SAMBIL LA CANDELARIA", "SAMBIL CHACAO", "BUENAVENTURA", "CHARALLAVE", "SAN ANTONIO", "SAN FERNANDO DE APURE", "LAS AMÉRICAS", "TORRE VALENCIA", "SAN JUAN DE LOS MORROS", "BUENAVENTURA ARAURE", "METRÓPOLIS", "PUERTO ORDAZ", "ORINOCO", "MONAGAS PLAZA", "SAMBIL PARAGUANÁ", "VALERA", "BELLA VISTA", "CABIMAS", "PLAZA MAYOR", "PORLAMAR", "CUMANÁ"],
+            "Telefónica": ["EPSDC-ATE", "ASISTA SERVICIOS"],
+            "Virtual": ["VIRTUAL"],
+            "SPL": ["SOPORTE PRIMERA LINEA"]
+        };
+
+        const proveedorToCanalMap = {};
+        Object.keys(canalesData).forEach(canal => {
+            canalesData[canal].forEach(proveedor => {
+                proveedorToCanalMap[proveedor] = canal;
+            });
+        });
+
+        const incidenciaData = {};
+        const listasOsac = {"Eventos Externos": ["Falla Electrica a Nivel Nacional", "Falla Electrica a Nivel Regional", "Falla Electrica en el Centro de Llamadas", "Falla Electrica en la Zona", "Falta de Personal (Manifestaciones de Orden Público)", "Fenómenos Naturales (Terremotos, Sismos, Inundación)", "Incendio en el Centro de Llamadas", "Manifestación de Ejecutivos en Centro de Llamadas"], "Eventos Informativos": ["Otros (Especifique en las observaciones)"], "Herramientas y Aplicaciones": ["Falla con Reporte de Gestión", "Falla con VPN", "Falla Correo Corporativo", "Falla RTB", "Falla XIUS-CCUI", "Falla XIUS-CMUI", "Falla XIUS-CORPORATIVOS", "Falla Red Wifi", "Falla Sincola", "Falla Qmatic", "Falla Gestor de Eventos", "Falla Biopago", "Falla Payall", "Falla Puntos de ventas bancario"], "Plataforma de Atención": ["Alto Tráfico de Llamadas por Rellamadas", "Falla Enlace de Datos", "Falla Enlaces de Voz", "Falla Hyperion Solution", "Falla Problema de Red", "Falla en Servidores", "Falla de Red", "Falla con el Wifi", "Corte de Fibra", "Falla Lineas CANTV", "Reinicio de Servidores"], "Servicios": ["Cobro Errado de Llamadas", "Cobro Errado de Planes y Servicios", "Cobro Errado SMS", "Congestión de Llamadas", "F/S Pagina WWW.MOVILNET.COM.VE", "Falla *5/*55", "Falla de Emisión de Llamadas", "Falla de Recepción de Llamadas", "Falla Recarga Bancaria", "Falla Recarga Plataforma Patria", "Falla Roaming Global", "Falla Emisión SMS", "Falla Recepción SMS", "Falla Emisión y Recepción SMS", "Pago por Transferencia", "Pago C2P no Aplicada", "Recarga no Aplicada por Banco O VenAPP", "Recarga Numero Errado", "Retraso en cobro de Renta Plan y/o Servicio", "Pérdida de Saldo", "Reclamo por línea perdida", "Renta No Disfrutada", "Cobro doble de Renta", "Cobro Errado de Datos", "Cobro Errado de llamadas", "Cobro Errados de SMS", "Cobro Errado de Renta", "Estatus del Caso Escalado"], "Ventanas de Mantenimientos": ["Ventana de mantenimiento(Especifique en las observaciones)"]};
+        incidenciaData["EPSDC-ATE"] = {"Eventos Externos": ["Falla Electrica a Nivel Nacional","Falla Electrica a Nivel Regional","Falla Electrica en el Centro de Llamadas","Falla Electrica en la Zona","Falta de Personal (Manifestaciones de Orden Público)","Fenómenos Naturales (Terremotos, Sismos, Inundación)","Incendio en el Centro de Llamadas","Manifestación de Ejecutivos en Centro de Llamadas"],"Eventos Informativos": ["Otros (Especifique en las observaciones)"],"Herramientas y Aplicaciones": ["Falla con VPN","Falla Correo Corporativo","Falla Reporte Hyperion","Falla RTB","Falla XIUS-CCUI","Falla XIUS-CMUI","Falla XIUS-CORPORATIVOS","Falla Softphone Nortel"],"Plataforma de Atención": ["Alto Tráfico de Llamadas Cola Prepago","Alto Tráfico de Llamadas Cola Suspensiones","Alto Tráfico de Llamadas por Desborde","Alto Tráfico de Llamadas por Rellamadas","Apagado Centro de Datos(DataCenter)","Apoyo de Personal a otro Skill","Apertura de canales","Baja Afluencia de Llamadas Cola Prepago","Cierre de canales","Corte de Fibra","Falla CCPulse+","Falla Central Telefonica-PBX","Falla de Recepción de Llamadas *611","Falla Enlace de Datos","Falla Enlaces de Voz","Falla Hyperion Solution","Falla IVR","Falla Plataforma Genesys","Falla Problema de Red","Falla con Enrutamiento de Llamadas","Falla Con TN PBX Nortel","Falla Tono Ocupado","Falla Llamadas Caídas","Falla Llamadas Mudas","Ingreso de Llamadas por Default Routing (Contingencia)","No Ingreso de Llamadas Prepago"],"Servicios": ["Cobro Errado de Llamadas","Cobro Errado de Planes y Servicios","Cobro Errado SMS","Congestión de Llamadas","F/S Pagina WWW.MOVILNET.COM.VE","Falla *5/*55","Falla de Emisión de Llamadas","Falla de Recepción de Llamadas","Falla Recarga Bancaria","Falla Recarga Plataforma Patria","Falla Roaming Global","Falla Emisión SMS","Falla Recepción SMS","Falla Emisión y Recepción SMS"],"Ventanas de Mantenimientos": ["Ventana de mantenimiento(Especifique en las observaciones)"]};
+        incidenciaData["ASISTA SERVICIOS"] = {"Eventos Externos": ["Falla Electrica a Nivel Nacional","Falla Electrica a Nivel Regional","Falla Electrica en el Centro de Llamadas","Falla Electrica en la Zona","Falta de Personal (Manifestaciones de Orden Público)","Fenómenos Naturales (Terremotos, Sismos, Inundación)","Incendio en el Centro de Llamadas","Manifestación de Ejecutivos en Centro de Llamadas"],"Eventos Informativos": ["Otros (Especifique en las observaciones)"],"Herramientas y Aplicaciones": ["Falla con VPN","Falla Correo Corporativo","Falla RTB","Falla XIUS-CCUI","Falla XIUS-CMUI","Falla XIUS-CORPORATIVOS","Falla Softphone Vcidial"],"Plataforma de Atención": ["Apertura de canales","Baja Afluencia de Llamadas Cola Juridico","Baja Afluencia de Llamadas Cola Pospago","Baja Afluencia de Llamadas Cola Prepago","Cierre de canales","Corte de Fibra","Falla Central Telefonica-PBX","Falla de Recepción de Llamadas *611","Falla Enlace de Datos","Falla Enlaces de Voz","Falla IVR","Falla Plataforma Vcdial","Falla Problema de Red","Falla Tono Ocupado","Falla Llamadas Caídas","Falla Llamadas Mudas","Fallas con Enrutamiento de Llamadas","Ingreso de Llamadas por Default Routing (Contingencia)","No Ingreso de Llamadas Juridico","No Ingreso de Llamadas Pospago","No Ingreso de Llamadas Prepago"],"Servicios": ["Cobro Errado de Llamadas","Cobro Errado de Planes y Servicios","Cobro Errado SMS","Congestión de Llamadas","F/S Pagina WWW.MOVILNET.COM.VE","Falla *5/*55","Falla de Emisión de Llamadas","Falla de Recepción de Llamadas","Falla Recarga Bancaria","Falla Recarga Plataforma Patria","Falla Roaming Global","Falla Emisión SMS","Falla Recepción SMS","Falla Emisión y Recepción SMS"],"Ventanas de Mantenimientos": ["Ventana de mantenimiento(Especifique en las observaciones)"]};
+        incidenciaData["SOPORTE PRIMERA LINEA"] = {"Eventos Externos": ["Falla Electrica a Nivel Nacional","Falla Electrica a Nivel Regional","Falla Electrica en el Centro de Llamadas","Falla Electrica en la Zona","Falta de Personal (Manifestaciones de Orden Público)","Fenómenos Naturales (Terremotos, Sismos, Inundación)","Incendio en el Centro de Llamadas","Manifestación de Ejecutivos en Centro de Llamadas"],"Eventos Informativos": ["Apoyo Institucional","Otros (Especifique en las observaciones)"],"Herramientas y Aplicaciones": ["Falla con Reporte de Gestión","Falla con VPN","Falla Correo Corporativo","Falla RTB","Falla XIUS-CCUI","Falla XIUS-CMUI","Falla XIUS-CORPORATIVOS","Falla OTOBO","Falla UDM","Falla Red Wifi"],"Plataforma de Atención": ["Alto Tráfico de Llamadas Cola SPL","Alto Tráfico de Llamadas por Rellamadas","No Ingreso de llamadas","Corte de Fibra","Reinicio de Servidores","Falla Enlace de Datos","Falla Enlaces de Voz","Falla Hyperion Solution","Falla Problema de Red","Falla en Servidores","Falla llamadas salientes Movilnet","Falla llamadas salientes LDN","Falla llamadas salientes Otras Operadoras"],"Ventanas de Mantenimientos": ["Ventana de mantenimiento(Especifique en las observaciones)"]};
+        incidenciaData["VIRTUAL"] = {"Eventos Externos": ["Falla Electrica a Nivel Nacional","Falla Electrica a Nivel Regional","Falla Electrica en el Centro de Llamadas","Falla Electrica en la Zona","Falta de Personal (Manifestaciones de Orden Público)","Fenómenos Naturales (Terremotos, Sismos, Inundación)","Incendio en el Centro de Llamadas","Manifestación de Ejecutivos en Centro de Llamadas","Falta de personal"],"Eventos Informativos": ["Apoyo Institucional","Otros (Especifique en las observaciones)"],"Herramientas y Aplicaciones": ["Falla con Reporte de Gestión","Falla con VPN","Falla Correo Corporativo","Falla RTB","Falla XIUS-CCUI","Falla XIUS-CMUI","Falla XIUS-CORPORATIVOS","Falla Whatsapp Business","Falla Google-Drive","Falla Red Wifi"],"Plataforma de Atención": ["Alto Tráfico de mensajes Whatsapp","Alto Tráfico de Llamadas por Rellamadas","Bloqueo de Seguridad Soporte Whatsapp","Corte de Fibra","Falla BOT Telegram","Falla Enlace de Datos","Falla Enlaces de Voz","Falla Hyperion Solution","Falla Problema de Red","Falla en Servidores","Falla llamadas salientes Movilnet","Falla llamadas salientes LDN","Falla llamadas salientes Otras Operadoras","No Ingreso de llamadas","Reinicio de Servidores"],"Servicios": ["Cobro Errado de Llamadas","Cobro Errado de Planes y Servicios","Cobro Errado SMS","Congestión de Llamadas","Cobro doble de Renta","Cobro Errado de Datos","Cobro Errado de llamadas","Cobro Errados de SMS","Cobro Errado de Renta","Estatus del Caso Escalado","F/S Pagina WWW.MOVILNET.COM.VE","Falla *5/*55","Falla de Emisión de Llamadas","Falla de Recepción de Llamadas","Falla Recarga Bancaria","Falla Recarga Plataforma Patria","Falla Roaming Global","Falla Emisión SMS","Falla Recepción SMS","Falla Emisión y Recepción SMS","Pago por Transferencia","Pago C2P no Aplicada","Recarga no Aplicada por Banco o VenAPP","Recarga Numero Errado","Retraso en cobro de Renta Plan y/o Servicio","Pérdida de Saldo","Reclamo por línea perdida","Renta No Disfrutada"],"Ventanas de Mantenimientos": ["Ventana de mantenimiento(Especifique en las observaciones)"]};
+        canalesData.Presencial.forEach(osac => { incidenciaData[osac] = listasOsac; });
+
+        // --- SECCIÓN 2: FUNCIONES DE AYUDA ---
+        function resetSelect(selectElement, placeholder) {
+            if (selectElement) {
+                selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+                selectElement.disabled = true;
+            }
+        }
+
+        function abrirModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = "block";
+                modal.setAttribute('aria-hidden', 'false');
+            }
+        }
+
+        function cerrarModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = "none";
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        // --- SECCIÓN 3: LÓGICA DE EVENTOS (LISTENERS) ---
+        canalSelect.addEventListener('change', function() {
+            const canal = this.value;
+            resetSelect(proveedorSelect, 'Seleccione un proveedor');
+            resetSelect(tipoSelect, 'Seleccione un tipo de incidencia');
+            resetSelect(eventoSelect, 'Seleccione un evento');
+            if (canal && canalesData[canal]) {
+                proveedorSelect.disabled = false;
+                canalesData[canal].forEach(function(proveedor) {
+                    const opt = document.createElement('option');
+                    opt.value = proveedor;
+                    opt.text = proveedor;
+                    proveedorSelect.appendChild(opt);
+                });
+            }
+        });
+
+        proveedorSelect.addEventListener('change', function() {
+            const prov = this.value;
+            resetSelect(tipoSelect, 'Seleccione un tipo de incidencia');
+            resetSelect(eventoSelect, 'Seleccione un evento');
+            if (prov && incidenciaData[prov]) {
+                tipoSelect.disabled = false;
+                Object.keys(incidenciaData[prov]).forEach(function(tipo) {
+                    const opt = document.createElement('option');
+                    opt.value = tipo;
+                    opt.text = tipo;
+                    tipoSelect.appendChild(opt);
+                });
+            }
+        });
+
+        tipoSelect.addEventListener('change', function() {
+            const prov = proveedorSelect.value;
+            const tipo = this.value;
+            resetSelect(eventoSelect, 'Seleccione un evento');
+            if (prov && tipo && incidenciaData[prov] && incidenciaData[prov][tipo]) {
+                eventoSelect.disabled = false;
+                incidenciaData[prov][tipo].forEach(function(evento) {
+                    const opt = document.createElement('option');
+                    opt.value = evento;
+                    opt.text = evento;
+                    eventoSelect.appendChild(opt);
+                });
+            }
+        });
+
+        document.getElementById('btnGuardar').addEventListener('click', guardarRegistro);
+        document.getElementById('btnActualizar').addEventListener('click', actualizar);
+        document.getElementById('btnBuscar').addEventListener('click', () => abrirModal('modalBusqueda'));
+        document.getElementById('btnDescargar').addEventListener('click', mostrarOpcionesDescarga);
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('adminForm').addEventListener('submit', crearUsuario);
+        document.getElementById('btnModalBuscar').addEventListener('click', () => buscarRegistroModal(document.getElementById('modalNumeroRegistro').value));
+        document.getElementById('btnIniciarDescarga').addEventListener('click', () => descargarDatos(document.getElementById('proveedorDescarga').value));
+        document.getElementById('btnAceptarRegistro').addEventListener('click', cargarRegistroDesdeModal);
+        document.getElementById("formulario").addEventListener("reset", limpiarYReconfigurarFormulario);
+        document.querySelector('#ventanaEmergente button').addEventListener('click', () => cerrarModal('ventanaEmergente'));
+        
+        ['cerrarModal', 'cerrarModalDescarga'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', function() {
+                cerrarModal(this.closest('.modal').id);
+                if (this.id === 'cerrarModal') limpiarResultadosBusqueda();
+            });
+        });
+
+        // --- SECCIÓN 4: FUNCIONES PRINCIPALES ---
+        function inicializarFormulario() {
+            const fechaFields = ['fechaInicio', 'fechaEscalamiento', 'fechaSolucion'];
+            fechaFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    field.max = `${year}-${month}-${day}T${hours}:${minutes}`;
+                }
+            });
+            configurarProveedorUsuario();
+        }
+
+        function limpiarYReconfigurarFormulario() {
+            this.dataset.rowIndex = "";
+            const allFieldIds = ['numeroRegistro', 'fechaInicio', 'fechaEscalamiento', 'nivelEscalamiento', 'causaIncidencia', 'fechaSolucion', 'detectadoPor', 'reportadoA', 'responsable', 'ticket', 'descripcion', 'observaciones', 'estatus'];
+            allFieldIds.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field && field.tagName !== 'SELECT') field.value = '';
+                if (field) field.disabled = false;
+            });
+            document.getElementById("btnGuardar").disabled = false;
+            resetSelect(canalSelect, 'Seleccione un canal');
+            resetSelect(proveedorSelect, 'Seleccione un proveedor');
+            resetSelect(tipoSelect, 'Seleccione un tipo de incidencia');
+            resetSelect(eventoSelect, 'Seleccione un evento');
+            setTimeout(configurarProveedorUsuario, 0);
+        }
+
+        function configurarProveedorUsuario() {
+            const currentRole = sessionStorage.getItem('currentRole');
+            const proveedorUsuario = sessionStorage.getItem('currentProvider');
+            const canalUsuario = proveedorToCanalMap[proveedorUsuario];
+            if (currentRole === 'user' && proveedorUsuario && canalUsuario) {
+                canalSelect.value = canalUsuario;
+                canalSelect.disabled = true;
+                canalSelect.dispatchEvent(new Event('change'));
+                setTimeout(() => {
+                    proveedorSelect.value = proveedorUsuario;
+                    proveedorSelect.disabled = true;
+                    proveedorSelect.dispatchEvent(new Event('change'));
+                }, 50);
+            } else {
+                canalSelect.disabled = false;
+                resetSelect(proveedorSelect, 'Seleccione un proveedor');
+            }
+        }
+
+        function obtenerDatosFormulario() {
+            return {
+                numeroRegistro: document.getElementById('numeroRegistro').value,
+                proveedor: document.getElementById('proveedor').value,
+                tipoIncidencia: document.getElementById('tipoIncidencia').value,
+                nombreEvento: document.getElementById('nombreEvento').value,
+                fechaInicio: document.getElementById('fechaInicio').value,
+                fechaEscalamiento: document.getElementById('fechaEscalamiento').value,
+                nivelEscalamiento: document.getElementById('nivelEscalamiento').value,
+                causaIncidencia: document.getElementById('causaIncidencia').value,
+                fechaSolucion: document.getElementById('fechaSolucion').value,
+                detectadoPor: document.getElementById('detectadoPor').value,
+                reportadoA: document.getElementById('reportadoA').value,
+                responsable: document.getElementById('responsable').value,
+                ticket: document.getElementById('ticket').value,
+                descripcion: document.getElementById('descripcion').value,
+                observaciones: document.getElementById('observaciones').value,
+                estatus: document.getElementById('estatus').value
+            };
+        }
+
+        function guardarRegistro() {
+            try {
+                const data = obtenerDatosFormulario();
+                const camposObligatorios = { 'canalAtencion': 'Canal de Atención', 'proveedor': 'Proveedor/OSAC', 'tipoIncidencia': 'Tipo de Incidencia', 'nombreEvento': 'Nombre del Evento', 'fechaInicio': 'Fecha de Inicio', 'fechaEscalamiento': 'Fecha de Escalamiento', 'nivelEscalamiento': 'Nivel de Escalamiento', 'causaIncidencia': 'Causa de la Incidencia', 'detectadoPor': 'Detectado Por', 'reportadoA': 'Reportado A', 'responsable': 'Responsable', 'ticket': 'N° de Ticket', 'descripcion': 'Descripción de la Incidencia', 'observaciones': 'Observaciones', 'estatus': 'Estatus' };
+                const camposFaltantes = Object.keys(camposObligatorios).filter(campo => !document.getElementById(campo).value);
+
+                if (camposFaltantes.length > 0) {
+                    const nombresFaltantes = camposFaltantes.map(c => camposObligatorios[c]).join(', ');
+                    mostrarMensaje(`Por favor complete los siguientes campos: ${nombresFaltantes}`, "error");
+                    return;
+                }
+                
+                mostrarMensaje("Verificando horario...", "info");
+                google.script.run
+                    .withSuccessHandler(esValido => {
+                        if (!esValido) {
+                            mostrarMensaje("⛔ No se puede registrar fuera del horario laboral del proveedor.", "error");
+                            return;
+                        }
+                        google.script.run
+                            .withSuccessHandler(res => {
+                                if (res && res.ok) {
+                                    mostrarVentanaEmergente("El número de registro es: " + res.numeroRegistro);
+                                    document.getElementById("formulario").reset();
+                                } else {
+                                    mostrarMensaje(res ? res.message : "Error al guardar", "error");
+                                }
+                            })
+                            .withFailureHandler(err => mostrarMensaje("Error al guardar: " + err.message, "error"))
+                            .agregarDatos(data);
+                    })
+                    .withFailureHandler(err => mostrarMensaje("Error al validar horario: " + err.message, "error"))
+                    .esHoraValidaParaProveedor(data.fechaInicio, data.proveedor);
+            } catch (e) {
+                mostrarMensaje("Error inesperado: " + e.message, "error");
+            }
+        }
+        
+        function actualizar() {
+            try {
+                const fieldsToReactivate = ['canalAtencion', 'proveedor', 'numeroRegistro', 'tipoIncidencia', 'nombreEvento', 'fechaInicio', 'fechaEscalamiento', 'nivelEscalamiento', 'detectadoPor', 'reportadoA', 'responsable'];
+                fieldsToReactivate.forEach(id => { const field = document.getElementById(id); if(field) field.disabled = false; });
+                
+                const data = obtenerDatosFormulario();
+                const rowIndex = document.getElementById("formulario").dataset.rowIndex;
+
+                if (!rowIndex) {
+                    mostrarMensaje("Debe buscar primero el registro que desea actualizar", "error");
+                    fieldsToReactivate.forEach(id => { const field = document.getElementById(id); if(field) field.disabled = true; });
+                    configurarProveedorUsuario();
+                    return;
+                }
+
+                const camposHabilitadosObligatorios = {'causaIncidencia': 'Causa de la Incidencia', 'ticket': 'N° de Ticket', 'descripcion': 'Descripción de la Incidencia', 'observaciones': 'Observaciones', 'estatus': 'Estatus'};
+                let camposFaltantes = Object.keys(camposHabilitadosObligatorios).filter(campo => !data[campo] || !String(data[campo]).trim());
+                if (data.estatus === 'Cerrado' && (!data.fechaSolucion || !String(data.fechaSolucion).trim())) {
+                    camposFaltantes.push('fechaSolucion');
+                }
+                
+                if (camposFaltantes.length > 0) {
+                    const nombresFaltantes = camposFaltantes.map(c => camposHabilitadosObligatorios[c] || 'Fecha de Solución').join(', ');
+                    mostrarMensaje(`Por favor, complete los siguientes campos para actualizar: ${nombresFaltantes}`, 'error');
+                    fieldsToReactivate.forEach(id => { const field = document.getElementById(id); if(field) field.disabled = true; });
+                    configurarProveedorUsuario();
+                    return;
+                }
+
+                data.rowIndex = rowIndex;
+                mostrarMensaje("Verificando horario...", "info");
+
+                const guardarActualizacionFinal = () => {
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            if (res && res.ok) {
+                                mostrarMensaje(res.message, "success");
+                                document.getElementById("formulario").reset();
+                            } else {
+                                mostrarMensaje(res ? res.message : "Error al actualizar", "error");
+                            }
+                        })
+                        .withFailureHandler(err => mostrarMensaje("Error al actualizar: " + err.message, "error"))
+                        .actualizarRegistro(data);
+                };
+
+                if (data.fechaSolucion) {
+                    google.script.run
+                        .withSuccessHandler(solucionValida => {
+                            if (!solucionValida) {
+                                mostrarMensaje("⛔ La fecha de solución no está en el horario laboral del proveedor.", "error");
+                                fieldsToReactivate.forEach(id => { const field = document.getElementById(id); if(field) field.disabled = true; });
+                                configurarProveedorUsuario();
+                                return;
+                            }
+                            guardarActualizacionFinal();
+                        })
+                        .withFailureHandler(err => mostrarMensaje("Error al validar fecha de solución: " + err.message, "error"))
+                        .esHoraValidaParaProveedor(data.fechaSolucion, data.proveedor);
+                } else {
+                    guardarActualizacionFinal();
+                }
+            } catch (e) {
+                mostrarMensaje("Error inesperado en actualizar: " + e.message, "error");
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loginMessage = document.getElementById('loginMessage');
+            if (!username || !password) {
+                loginMessage.textContent = 'Por favor ingrese usuario y contraseña';
+                return;
+            }
+            loginMessage.textContent = 'Iniciando sesión...';
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response && response.ok) {
+                        sessionStorage.setItem('currentUser', response.user.username);
+                        sessionStorage.setItem('currentRole', response.user.role);
+                        sessionStorage.setItem('currentProvider', response.user.provider || '');
+                        sessionStorage.setItem('currentFirstName', response.user.firstName || '');
+                        sessionStorage.setItem('currentLastName', response.user.lastName || '');
+
+                        document.querySelector('.login-wrapper').style.display = 'none';
+                        document.getElementById('mainContent').style.display = 'block';
+
+                        document.getElementById('currentUser').textContent = response.user.username;
+                        document.getElementById('currentRole').textContent = response.user.role;
+                        document.getElementById('currentFirstName').textContent = response.user.firstName || '';
+                        document.getElementById('currentLastName').textContent = response.user.lastName || '';
+
+                        const isAdminView = response.user.role === 'superadmin';
+                        const isUserView = response.user.role === 'user';
+                        
+                        document.getElementById('adminPanel').style.display = isAdminView ? 'block' : 'none';
+                        document.getElementById('userManagementPanel').style.display = isAdminView ? 'block' : 'none';
+                        document.getElementById('bitacoraView').style.display = !isAdminView ? 'block' : 'none';
+                        document.getElementById('providerInfo').style.display = isUserView ? 'inline' : 'none';
+                        if(isUserView) document.getElementById('currentProvider').textContent = response.user.provider;
+                        if(isAdminView) cargarUsuarios();
+                        
+                        configurarProveedorUsuario();
+                    } else {
+                        loginMessage.textContent = response ? response.message : 'Error en la autenticación';
+                    }
+                })
+                .withFailureHandler(err => {
+                    loginMessage.textContent = 'Error al iniciar sesión: ' + err.message;
+                })
+                .authenticateUser(username, password);
+        }
+
+        function mostrarOpcionesDescarga() {
+            const currentRole = sessionStorage.getItem('currentRole');
+            if (currentRole === 'user') {
+                descargarDatos(sessionStorage.getItem('currentProvider'));
+            } else {
+                abrirModal('modalDescarga');
+            }
+        }
+
+        function buscarRegistroModal(numero) {
+            if (!numero) { mostrarMensaje("Debe ingresar un número de registro", "error"); return; }
+            mostrarMensaje("Buscando...", "info");
+            limpiarResultadosBusqueda();
+            google.script.run
+                .withSuccessHandler(res => {
+                    if (res && res.ok) {
+                        const datos = res.registro;
+                        document.getElementById("resultNumeroRegistro").textContent = datos.numeroRegistro || "N/A";
+                        document.getElementById("resultProveedor").textContent = datos.proveedor || "N/A";
+                        document.getElementById("resultTipoIncidencia").textContent = datos.tipoIncidencia || "N/A";
+                        document.getElementById("resultNombreEvento").textContent = datos.nombreEvento || "N/A";
+                        document.getElementById("resultFechaInicio").textContent = new Date(datos.fechaInicio).toLocaleString('es-VE');
+                        document.getElementById("resultEstatus").textContent = datos.estatus || "N/A";
+                        document.getElementById("resultadoBusqueda").style.display = "block";
+                        document.getElementById("resultadoBusqueda").dataset.registro = JSON.stringify(datos);
+                        document.getElementById("resultadoBusqueda").dataset.rowIndex = res.rowIndex;
+                    } else {
+                        mostrarMensaje(res ? res.message : "Registro no encontrado", "error");
+                    }
+                })
+                .withFailureHandler(err => mostrarMensaje("Error al buscar: " + err.message, "error"))
+                .buscarRegistro(numero);
+        }
+
+        function cargarRegistroDesdeModal() {
+            const resultadoDiv = document.getElementById("resultadoBusqueda");
+            const datos = JSON.parse(resultadoDiv.dataset.registro);
+            const rowIndex = resultadoDiv.dataset.rowIndex;
+            
+            populateSelectsFromData(datos);
+            setTimeout(() => {
+                Object.keys(datos).forEach(campo => {
+                    const input = document.getElementById(campo);
+                    if (input && !['canalAtencion', 'proveedor', 'tipoIncidencia', 'nombreEvento'].includes(campo)) {
+                        input.value = datos[campo];
+                    }
+                });
+                document.getElementById("formulario").dataset.rowIndex = rowIndex;
+                document.getElementById("btnGuardar").disabled = true;
+                ['canalAtencion', 'numeroRegistro','proveedor','tipoIncidencia','nombreEvento','fechaInicio','fechaEscalamiento','nivelEscalamiento','detectadoPor','reportadoA','responsable'].forEach(id => {
+                    const field = document.getElementById(id);
+                    if(field) field.disabled = true;
+                });
+            }, 500);
+
+            limpiarResultadosBusqueda();
+            cerrarModal('modalBusqueda');
+            mostrarMensaje("Registro cargado para edición", "success");
+        }
+        
+        function populateSelectsFromData(datos) {
+            const canalUsuario = proveedorToCanalMap[datos.proveedor];
+            if (canalUsuario) {
+                canalSelect.value = canalUsuario;
+                canalSelect.dispatchEvent(new Event('change'));
+                setTimeout(() => {
+                    proveedorSelect.value = datos.proveedor;
+                    proveedorSelect.dispatchEvent(new Event('change'));
+                    setTimeout(() => {
+                        tipoSelect.value = datos.tipoIncidencia;
+                        tipoSelect.dispatchEvent(new Event('change'));
+                        setTimeout(() => {
+                            eventoSelect.value = datos.nombreEvento;
+                        }, 50);
+                    }, 50);
+                }, 50);
+            }
+        }
+        
+        function limpiarResultadosBusqueda() {
+            const resultadoDiv = document.getElementById("resultadoBusqueda");
+            if(resultadoDiv){
+                resultadoDiv.style.display = "none";
+                ['resultNumeroRegistro', 'resultProveedor', 'resultTipoIncidencia', 'resultNombreEvento', 'resultFechaInicio', 'resultEstatus'].forEach(id => {
+                    document.getElementById(id).textContent = "";
+                });
+                resultadoDiv.dataset.registro = "";
+                resultadoDiv.dataset.rowIndex = "";
+            }
+            if(document.getElementById("modalNumeroRegistro")) document.getElementById("modalNumeroRegistro").value = "";
+        }
+
+        function descargarDatos(proveedor) {
+            if (!proveedor) { mostrarMensaje("Por favor seleccione un proveedor", "error"); return; }
+            mostrarMensaje("Generando archivo Excel...", "info");
+            google.script.run
+                .withSuccessHandler(data => {
+                    if (!data || data.length <= 1) {
+                        mostrarMensaje("No hay datos para exportar para este proveedor", "warning");
+                        return;
+                    }
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    XLSX.utils.book_append_sheet(wb, ws, "Incidencias");
+                    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                    const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `Incidencias_${proveedor.replace(/\s+/g, "_")}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                    mostrarMensaje("Archivo descargado", "success");
+                    cerrarModal('modalDescarga');
+                })
+                .withFailureHandler(err => mostrarMensaje("Error al obtener datos para Excel: " + err.message, "error"))
+                .obtenerDatosParaExcel(proveedor);
+        }
+
+        function mostrarVentanaEmergente(mensaje) {
+            document.getElementById("mensajeVentana").innerText = mensaje;
+            abrirModal('ventanaEmergente');
+        }
+
+        function cargarUsuarios() {
+            google.script.run
+                .withSuccessHandler(users => {
+                    const tbody = document.getElementById('usersTableBody');
+                    tbody.innerHTML = '';
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${user.username}</td><td>${user.firstName} ${user.lastName}</td><td>${user.role}</td><td>${user.provider || 'N/A'}</td><td><button class="action-btn edit-btn" onclick="editarUsuario('${user.username}')">Editar</button><button class="action-btn delete-btn" onclick="eliminarUsuario('${user.username}')">Eliminar</button></td>`;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .withFailureHandler(err => mostrarMensaje('Error al cargar usuarios', 'error'))
+                .getUsers();
+        }
+
+        function crearUsuario(event) {
+            event.preventDefault();
+            const currentRole = sessionStorage.getItem('currentRole');
+            if (currentRole !== 'superadmin') {
+                mostrarMensaje("Solo el superadministrador puede crear usuarios", "error");
+                return;
+            }
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const firstName = document.getElementById('newFirstName').value.trim();
+            const lastName = document.getElementById('newLastName').value.trim();
+            const role = document.getElementById('newRole').value;
+            const provider = document.getElementById('newProvider').value;
+            if (!username || !password || !firstName || !lastName || !role) {
+                mostrarMensaje("Todos los campos son obligatorios para crear un usuario.", "error");
+                return;
+            }
+            if (role === 'user' && !provider) {
+                mostrarMensaje("Debe seleccionar un proveedor para el rol de usuario.", "error");
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.ok) {
+                        mostrarMensaje(response.message, 'success');
+                        document.getElementById('adminForm').reset();
+                        cargarUsuarios();
+                    } else {
+                        mostrarMensaje(response.message, 'error');
+                    }
+                })
+                .withFailureHandler(err => mostrarMensaje('Error al crear usuario', 'error'))
+                .createUser(username, password, role, provider, firstName, lastName);
+        }
+        
+        // Asignación global para que onclick lo encuentre
+        window.editarUsuario = function(username) {
+            const currentRole = sessionStorage.getItem('currentRole');
+            if (currentRole !== 'superadmin') { return; }
+            if (username === 'admin' || username === 'superadmin') {
+                mostrarMensaje('No se puede editar este usuario', 'error');
+                return;
+            }
+            const newPassword = prompt('Nueva contraseña para ' + username + ' (dejar en blanco para no cambiar):');
+            if (newPassword !== null) {
+                google.script.run
+                    .withSuccessHandler(response => {
+                        if (response.ok) {
+                            mostrarMensaje(response.message, 'success');
+                            cargarUsuarios();
+                        } else {
+                            mostrarMensaje(response.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(err => mostrarMensaje('Error al editar usuario', 'error'))
+                    .updateUser(username, newPassword, null, null, null);
+            }
+        }
+
+        window.eliminarUsuario = function(username) {
+            const currentRole = sessionStorage.getItem('currentRole');
+            if (currentRole !== 'superadmin') { return; }
+            if (username === 'admin' || username === 'superadmin') {
+                mostrarMensaje('No se puede eliminar este usuario', 'error');
+                return;
+            }
+            if (confirm(`¿Está seguro de que desea eliminar el usuario ${username}? Esta acción es irreversible.`)) {
+                google.script.run
+                    .withSuccessHandler(response => {
+                        if (response.ok) {
+                            mostrarMensaje(response.message, 'success');
+                            cargarUsuarios();
+                        } else {
+                            mostrarMensaje(response.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(err => mostrarMensaje('Error al eliminar usuario', 'error'))
+                    .deleteUser(username);
+            }
+        }
+        
+        function mostrarMensaje(texto, tipo) {
+            const container = document.getElementById('notificationContainer');
+            if (!container) return;
+            const notification = document.createElement('div');
+            notification.className = `notification ${tipo}`;
+            const config = {
+                success: { icon: 'fa-circle-check', title: '¡Éxito!' },
+                error: { icon: 'fa-circle-xmark', title: 'Error' },
+                info: { icon: 'fa-circle-info', title: 'Información' },
+                warning: { icon: 'fa-triangle-exclamation', title: 'Advertencia' }
+            };
+            const tipoConfig = config[tipo] || config.info;
+            notification.innerHTML = `<i class="fa-solid ${tipoConfig.icon} notification-icon"></i><div class="notification-content"><div class="notification-title">${tipoConfig.title}</div><div class="notification-message">${texto}</div></div><button class="notification-close">&times;</button>`;
+            
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                notification.classList.add('hide');
+                setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+            });
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('hide');
+                setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+            }, 5000);
+        }
+
+        // --- INICIALIZACIÓN FINAL ---
+        inicializarFormulario();
+    });
+</scrip
